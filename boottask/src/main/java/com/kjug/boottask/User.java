@@ -28,6 +28,7 @@ public class User {
     @NotNull
     private String username;
     @Column(nullable = false,
+            unique = true,
             check = @CheckConstraint(
                     name = "password_constraint",
                     constraint = "length(password) >= 6"

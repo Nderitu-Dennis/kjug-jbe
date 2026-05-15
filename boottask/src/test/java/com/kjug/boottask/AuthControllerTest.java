@@ -9,36 +9,33 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 import tools.jackson.databind.ObjectMapper;
-import java.time.LocalDateTime;
 import static org.mockito.ArgumentMatchers.any;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static com.kjug.boottask.Resources.RegistrationResource;
+import static com.kjug.boottask.Resources.LoginResource;
 @WebMvcTest
 @ExtendWith(SpringExtension.class)
 public class AuthControllerTest {
     @Autowired
     private MockMvc mockMvc;
     @MockitoBean
-    private UserRepository repository;
+    private AuthService authService;
     @Test
     public void shouldRegisterUserTest() throws Exception {
-        var registrationResource = new Resources.RegistrationResource(
+        var registrationResource = new RegistrationResource(
                 "joelaustime",
                 "password",
                 "joelaustine@gmail.com"
         );
-        var createdAt = LocalDateTime.now();
-        var lastUpdated = LocalDateTime.now();
-        var fakeEntity = new User(434323L,
+        var fakeUserResource = new Resources.UserResource(
+                434323L,
                 registrationResource.username(),
-                registrationResource.password(),
-                registrationResource.email(),
-                createdAt,
-                lastUpdated);
-        Mockito.when(repository.save(any(User.class)))
-                .thenReturn(fakeEntity);
+                registrationResource.email());
+        Mockito.when(authService.registerUser(any(RegistrationResource.class)))
+                .thenReturn(fakeUserResource);
         var payload = new ObjectMapper()
                 .writerWithDefaultPrettyPrinter()
                 .writeValueAsString(registrationResource);
@@ -57,8 +54,23 @@ public class AuthControllerTest {
                 .andExpect(jsonPath("@.username").value(registrationResource.username()))
                 .andExpect(jsonPath("@.email").value(registrationResource.email()))
                 .andReturn();
-
-                // {"id":long,"username":"string","email":"string"}
-
+    }
+    @Test
+    public void shouldLoginUserTest() throws Exception {
+        var resource = new LoginResource("john","pass123343534");
+        var payload = new ObjectMapper()
+                .writerWithDefaultPrettyPrinter()
+                .writeValueAsString(resource);
+        mockMvc.perform(
+                post("/api/login")
+                        .contentType(MediaType.APPLICATION_JSON_VALUE)
+                        .characterEncoding("UTF-8")
+                        .content(payload)
+                        .accept(MediaType.APPLICATION_JSON_VALUE))
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("@.sessionId").exists())
+                .andExpect(jsonPath("@.sessionId").isString())
+                .andReturn();
     }
 }

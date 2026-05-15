@@ -21,5 +21,11 @@ public interface Resources {
                     entity.getEmail());
         }
     }
-
+    record LoginResource(
+            String username,
+            String password
+    ){ }
+    record SessionResource(
+            String sessionId
+    ){}
 }
